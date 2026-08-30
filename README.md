@@ -7,7 +7,7 @@
 ```text
 LostAndFound/
 ├── frontend/    # Next.js 14 + Tailwind CSS (UI/UX)
-└── backend/     # สำหรับพัฒนา Backend API Server ในอนาคต
+└── backend/     # สำหรับพัฒนา Backend API Server ในอนาคตอะ
 ```
 
 ## วิธีการรันส่วน Frontend
