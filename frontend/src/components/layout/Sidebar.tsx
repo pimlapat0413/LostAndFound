@@ -16,9 +16,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navItems = [
     { label: 'หน้าแรก', icon: Home, href: '/' },
     { label: 'แจ้งของหาย', icon: FileText, href: '/report' },
-    { label: 'รับของคืน', icon: PackageCheck, href: '/claim' },
-    { label: 'ค้นหา', icon: Search, href: '/search' },
-    { label: 'ข้อมูลของหาย', icon: Database, href: '/items' },
+    { label: 'รายการของหาย / รับคืน', icon: PackageCheck, href: '/claim' },
+    { label: 'ผู้ดูแลระบบ (Admin)', icon: Shield, href: '/admin' },
   ];
 
   return (

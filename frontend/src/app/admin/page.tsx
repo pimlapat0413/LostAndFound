@@ -16,19 +16,35 @@ import {
   UserCog, 
   History, 
   ChevronRight,
-  CheckCircle
+  CheckCircle,
+  ShieldAlert,
+  UserCheck,
+  Plus,
+  X
 } from 'lucide-react'
 import { lostItems as initialItems, adminStats } from '@/data/mockData'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
 import { LostItem } from '@/types'
 
+// Mock user list for User Management
+const initialUsers = [
+  { id: '1', name: 'Aom', studentId: '65012345', email: 'aom123@gmail.com', role: 'user', status: 'active' },
+  { id: '2', name: 'Bank', studentId: '65012890', email: 'bank_b@gmail.com', role: 'user', status: 'active' },
+  { id: '3', name: 'Mint', studentId: '65013004', email: 'mint_m@gmail.com', role: 'admin', status: 'active' },
+  { id: '4', name: 'Film', studentId: '65014112', email: 'film_f@gmail.com', role: 'user', status: 'active' },
+  { id: '5', name: 'John', studentId: '65015998', email: 'john_j@gmail.com', role: 'user', status: 'active' },
+]
+
 export default function AdminDashboardPage() {
   const [items, setItems] = useState<LostItem[]>(initialItems)
+  const [users, setUsers] = useState(initialUsers)
   const [searchQuery, setSearchQuery] = useState('')
+  const [activeFilterTab, setActiveFilterTab] = useState<'all' | 'pending' | 'returned'>('all')
   const [viewingItem, setViewingItem] = useState<LostItem | null>(null)
   const [editingItem, setEditingItem] = useState<LostItem | null>(null)
   const [newStatus, setNewStatus] = useState<LostItem['status']>('searching')
+  const [showUserModal, setShowUserModal] = useState(false)
   const [notification, setNotification] = useState<string | null>(null)
 
   const showToast = (msg: string) => {
@@ -49,11 +65,26 @@ export default function AdminDashboardPage() {
     }
   }
 
-  const filteredItems = items.filter(item => 
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.reporterName.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const toggleUserRole = (userId: string, currentRole: string) => {
+    const nextRole = currentRole === 'admin' ? 'user' : 'admin'
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: nextRole } : u))
+    showToast(`เปลี่ยนสิทธิ์ผู้ใช้เป็น ${nextRole === 'admin' ? 'ผู้ดูแลระบบ (Admin)' : 'ผู้ใช้ทั่วไป (User)'} เรียบร้อย`)
+  }
+
+  const filteredItems = items.filter(item => {
+    const matchesSearch = 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.reporterName.toLowerCase().includes(searchQuery.toLowerCase())
+
+    if (activeFilterTab === 'pending') {
+      return matchesSearch && item.status !== 'returned'
+    }
+    if (activeFilterTab === 'returned') {
+      return matchesSearch && item.status === 'returned'
+    }
+    return matchesSearch
+  })
 
   const getStatusBadge = (status: LostItem['status']) => {
     switch (status) {
@@ -68,104 +99,87 @@ export default function AdminDashboardPage() {
     }
   }
 
-  const managementMenus = [
-    {
-      title: 'จัดการรายการของหาย',
-      subtitle: 'ดูรายการ จัดการรายการของหายทั้งหมด',
-      icon: ClipboardList,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
-      href: '/search'
-    },
-    {
-      title: 'จัดการสถานะ',
-      subtitle: 'อัปเดตสถานะรายการของหาย',
-      icon: RefreshCw,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
-      href: '/claim'
-    },
-    {
-      title: 'จัดการผู้ใช้งาน',
-      subtitle: 'จัดการบัญชีผู้ใช้งานในระบบ',
-      icon: UserCog,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
-      href: '#'
-    },
-    {
-      title: 'ประวัติการรับคืน',
-      subtitle: 'ดูประวัติรายการที่รับคืนแล้ว',
-      icon: History,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100',
-      href: '/search'
-    }
-  ]
-
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
       {/* Toast Alert */}
       {notification && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 bg-emerald-600 text-white px-4 py-3 rounded-lg shadow-lg animate-fade-in">
+        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-lg animate-fade-in text-xs font-semibold">
           <CheckCircle className="w-5 h-5" />
-          <span className="text-sm font-medium">{notification}</span>
+          <span>{notification}</span>
         </div>
       )}
 
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-xs border border-gray-100">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">แผงควบคุมผู้ดูแลระบบ (Admin Dashboard)</h1>
-            <p className="text-sm text-gray-500 mt-1">จัดการข้อมูลสิ่งของสูญหาย สถานะรายการ และผู้ใช้งานในระบบ</p>
+            <p className="text-xs text-gray-500 mt-1">จัดการข้อมูลรายการของหาย อัปเดตสถานะ และบริหารสิทธิ์ผู้ใช้งานในระบบ</p>
           </div>
-          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2 shadow-xs">
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2">
             <CalendarRange className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-medium text-gray-700">01/04/2024 - 30/04/2024</span>
+            <span className="text-xs font-semibold text-gray-700">01/04/2024 - 30/04/2024</span>
           </div>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <div 
+            onClick={() => setActiveFilterTab('all')}
+            className={`bg-white rounded-2xl p-6 border cursor-pointer transition-all ${
+              activeFilterTab === 'all' ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-md' : 'border-gray-100 hover:shadow-xs'
+            } flex items-center gap-4`}
+          >
             <div className="p-3.5 bg-blue-50 rounded-xl">
               <FileText className="w-7 h-7 text-blue-600" />
             </div>
             <div>
-              <p className="text-3xl font-bold text-gray-900">{adminStats.totalItems}</p>
+              <p className="text-3xl font-bold text-gray-900">{items.length}</p>
               <p className="text-xs font-medium text-gray-500 mt-0.5">รายการทั้งหมด</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <div 
+            onClick={() => setActiveFilterTab('pending')}
+            className={`bg-white rounded-2xl p-6 border cursor-pointer transition-all ${
+              activeFilterTab === 'pending' ? 'border-amber-500 ring-2 ring-amber-500/20 shadow-md' : 'border-gray-100 hover:shadow-xs'
+            } flex items-center gap-4`}
+          >
             <div className="p-3.5 bg-amber-50 rounded-xl">
               <Search className="w-7 h-7 text-amber-600" />
             </div>
             <div>
-              <p className="text-3xl font-bold text-gray-900">{adminStats.searching}</p>
-              <p className="text-xs font-medium text-gray-500 mt-0.5">รอรับคืน / ค้นหา</p>
+              <p className="text-3xl font-bold text-gray-900">{items.filter(i => i.status !== 'returned').length}</p>
+              <p className="text-xs font-medium text-gray-500 mt-0.5">รอดำเนินการ / ค้นหา</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <div 
+            onClick={() => setActiveFilterTab('returned')}
+            className={`bg-white rounded-2xl p-6 border cursor-pointer transition-all ${
+              activeFilterTab === 'returned' ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md' : 'border-gray-100 hover:shadow-xs'
+            } flex items-center gap-4`}
+          >
             <div className="p-3.5 bg-emerald-50 rounded-xl">
               <PackageCheck className="w-7 h-7 text-emerald-600" />
             </div>
             <div>
-              <p className="text-3xl font-bold text-gray-900">{adminStats.returned}</p>
+              <p className="text-3xl font-bold text-gray-900">{items.filter(i => i.status === 'returned').length}</p>
               <p className="text-xs font-medium text-gray-500 mt-0.5">รับคืนแล้ว</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <div 
+            onClick={() => setShowUserModal(true)}
+            className="bg-white rounded-2xl p-6 border border-gray-100 hover:border-purple-300 hover:shadow-md cursor-pointer transition-all flex items-center gap-4"
+          >
             <div className="p-3.5 bg-purple-50 rounded-xl">
               <Users className="w-7 h-7 text-purple-600" />
             </div>
             <div>
-              <p className="text-3xl font-bold text-gray-900">{adminStats.totalUsers}</p>
-              <p className="text-xs font-medium text-gray-500 mt-0.5">ผู้ใช้ทั้งหมด</p>
+              <p className="text-3xl font-bold text-gray-900">{users.length}</p>
+              <p className="text-xs font-medium text-gray-500 mt-0.5">ผู้ใช้ทั้งหมด (คลิกเพื่อจัดการ)</p>
             </div>
           </div>
         </div>
@@ -174,14 +188,18 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Left Column - Recent Items Table */}
-          <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 overflow-hidden flex flex-col shadow-xs">
             <div className="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gray-50/50">
-              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <span>รายการล่าสุด</span>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-gray-900">
+                  {activeFilterTab === 'all' && 'รายการทั้งหมดในระบบ'}
+                  {activeFilterTab === 'pending' && 'รายการที่รอดำเนินการ / กำลังค้นหา'}
+                  {activeFilterTab === 'returned' && 'ประวัติรายการที่รับคืนแล้ว'}
+                </h2>
                 <span className="text-xs bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full font-semibold">
-                  {filteredItems.length} รายการ
+                  {filteredItems.length}
                 </span>
-              </h2>
+              </div>
 
               {/* Table search filter */}
               <div className="relative min-w-[220px]">
@@ -209,11 +227,11 @@ export default function AdminDashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm">
-                  {filteredItems.slice(0, 6).map((item) => (
+                  {filteredItems.map((item) => (
                     <tr key={item.id} className="hover:bg-blue-50/30 transition-colors">
                       <td className="p-4 font-mono font-medium text-gray-900 text-xs">{item.code}</td>
                       <td className="p-4 font-medium text-gray-900">{item.name}</td>
-                      <td className="p-4 text-gray-600">{item.reporterName}</td>
+                      <td className="p-4 text-gray-600 text-xs">{item.reporterName}</td>
                       <td className="p-4 text-gray-500 text-xs">{item.dateLost}</td>
                       <td className="p-4">{getStatusBadge(item.status)}</td>
                       <td className="p-4">
@@ -253,51 +271,139 @@ export default function AdminDashboardPage() {
                 </tbody>
               </table>
             </div>
-
-            <div className="p-4 border-t border-gray-100 bg-gray-50/30 text-center">
-              <Link 
-                href="/search" 
-                className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-700 text-xs font-semibold hover:underline"
-              >
-                <span>ดูรายการทั้งหมด</span>
-                <ChevronRight className="w-4 h-4" />
-              </Link>
-            </div>
           </div>
 
           {/* Right Column - Management Menu */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden h-fit">
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-xs h-fit space-y-1">
             <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-              <h2 className="text-base font-bold text-gray-900">เมนูจัดการระบบ</h2>
+              <h2 className="text-base font-bold text-gray-900">เมนูจัดการระบบ Admin</h2>
             </div>
-            <div className="divide-y divide-gray-100">
-              {managementMenus.map((menu, index) => {
-                const Icon = menu.icon
-                return (
-                  <Link 
-                    key={index} 
-                    href={menu.href}
-                    className="flex items-center gap-4 p-4 hover:bg-gray-50/80 transition-colors group"
-                  >
-                    <div className={`p-3 rounded-xl ${menu.bgColor} group-hover:scale-105 transition-transform`}>
-                      <Icon className={`w-5 h-5 ${menu.color}`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                        {menu.title}
-                      </h3>
-                      <p className="text-xs text-gray-500 truncate mt-0.5">{menu.subtitle}</p>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
-                  </Link>
-                )
-              })}
+            
+            <div className="p-3 space-y-2">
+              <button 
+                onClick={() => setActiveFilterTab('all')}
+                className={`w-full text-left flex items-center gap-3.5 p-3.5 rounded-xl transition-all ${
+                  activeFilterTab === 'all' ? 'bg-blue-50 text-blue-700 border border-blue-200 font-semibold' : 'hover:bg-gray-50 text-gray-700'
+                }`}
+              >
+                <div className="p-2.5 rounded-lg bg-blue-100 text-blue-600">
+                  <ClipboardList className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">จัดการรายการของหายทั้งหมด</p>
+                  <p className="text-xs text-gray-500 truncate">ดูรายการและแก้ไขสิ่งของทั้งหมด ({items.length})</p>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => setActiveFilterTab('pending')}
+                className={`w-full text-left flex items-center gap-3.5 p-3.5 rounded-xl transition-all ${
+                  activeFilterTab === 'pending' ? 'bg-amber-50 text-amber-700 border border-amber-200 font-semibold' : 'hover:bg-gray-50 text-gray-700'
+                }`}
+              >
+                <div className="p-2.5 rounded-lg bg-amber-100 text-amber-600">
+                  <RefreshCw className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">จัดการสถานะ (รอดำเนินการ)</p>
+                  <p className="text-xs text-gray-500 truncate">อัปเดตสถานะของที่ยังไม่ได้คืน</p>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => setShowUserModal(true)}
+                className="w-full text-left flex items-center gap-3.5 p-3.5 rounded-xl hover:bg-purple-50 text-gray-700 hover:text-purple-700 transition-all border border-transparent hover:border-purple-200"
+              >
+                <div className="p-2.5 rounded-lg bg-purple-100 text-purple-600">
+                  <UserCog className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">จัดการผู้ใช้งาน ({users.length})</p>
+                  <p className="text-xs text-gray-500 truncate">จัดการบัญชีและสิทธิ์ผู้ใช้งานในระบบ</p>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => setActiveFilterTab('returned')}
+                className={`w-full text-left flex items-center gap-3.5 p-3.5 rounded-xl transition-all ${
+                  activeFilterTab === 'returned' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold' : 'hover:bg-gray-50 text-gray-700'
+                }`}
+              >
+                <div className="p-2.5 rounded-lg bg-emerald-100 text-emerald-600">
+                  <History className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">ประวัติการรับคืนแล้ว</p>
+                  <p className="text-xs text-gray-500 truncate">ดูประวัติรายการที่รับส่งมอบสำเร็จแล้ว</p>
+                </div>
+              </button>
             </div>
           </div>
 
         </div>
 
       </div>
+
+      {/* User Management Modal */}
+      {showUserModal && (
+        <Modal
+          isOpen={showUserModal}
+          onClose={() => setShowUserModal(false)}
+          title="จัดการผู้ใช้งานในระบบ (User Management)"
+        >
+          <div className="space-y-4">
+            <p className="text-xs text-gray-500">
+              รายชื่อนักศึกษาและผู้ใช้งานที่ลงทะเบียนในระบบทั้งหมด สามารถปรับเปลี่ยนสิทธิ์ (User / Admin) ได้
+            </p>
+            <div className="overflow-x-auto border border-gray-100 rounded-xl">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-gray-50 text-gray-500 border-b font-semibold">
+                  <tr>
+                    <th className="p-3">ชื่อ-นามสกุล</th>
+                    <th className="p-3">รหัสนักศึกษา</th>
+                    <th className="p-3">อีเมล</th>
+                    <th className="p-3">สิทธิ์ใช้งาน</th>
+                    <th className="p-3 text-center">การจัดการ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {users.map((u) => (
+                    <tr key={u.id} className="hover:bg-gray-50">
+                      <td className="p-3 font-semibold text-gray-900">{u.name}</td>
+                      <td className="p-3 font-mono text-gray-600">{u.studentId}</td>
+                      <td className="p-3 text-gray-500">{u.email}</td>
+                      <td className="p-3">
+                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                          u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {u.role === 'admin' ? 'Admin' : 'User'}
+                        </span>
+                      </td>
+                      <td className="p-3 text-center">
+                        <button
+                          onClick={() => toggleUserRole(u.id, u.role)}
+                          className="px-2.5 py-1 bg-gray-100 hover:bg-purple-50 hover:text-purple-700 text-gray-700 rounded-lg text-[11px] font-semibold transition-colors"
+                        >
+                          สลับสิทธิ์ {u.role === 'admin' ? '-> User' : '-> Admin'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setShowUserModal(false)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-colors shadow-xs"
+              >
+                เสร็จสิ้น
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* View Item Details Modal */}
       {viewingItem && (
