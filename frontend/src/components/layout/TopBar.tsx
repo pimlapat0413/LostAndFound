@@ -13,27 +13,21 @@ import {
   Briefcase, 
   Check, 
   X, 
-  Moon, 
-  Sun, 
-  Globe, 
-  Lock, 
   CheckCircle2,
-  ChevronRight,
   ExternalLink
 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
+import { useRole, UserRole } from '@/context/RoleContext';
 
 interface TopBarProps {
   onMenuClick: () => void;
 }
 
-type UserRole = 'student' | 'teacher' | 'admin';
-
 export default function TopBar({ onMenuClick }: TopBarProps) {
   const router = useRouter();
   
-  // State for user role
-  const [currentRole, setCurrentRole] = useState<UserRole>('admin');
+  // Use global role context
+  const { currentRole, setCurrentRole } = useRole();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   
   // State for notifications

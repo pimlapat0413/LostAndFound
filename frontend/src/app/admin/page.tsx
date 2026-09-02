@@ -25,6 +25,7 @@ import {
 import { lostItems as initialItems, adminStats } from '@/data/mockData'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
+import { useRole } from '@/context/RoleContext'
 import { LostItem } from '@/types'
 
 // Mock user list for User Management
@@ -37,6 +38,8 @@ const initialUsers = [
 ]
 
 export default function AdminDashboardPage() {
+  const { currentRole, setCurrentRole, isAdmin } = useRole()
+
   const [items, setItems] = useState<LostItem[]>(initialItems)
   const [users, setUsers] = useState(initialUsers)
   const [searchQuery, setSearchQuery] = useState('')
@@ -97,6 +100,50 @@ export default function AdminDashboardPage() {
       default:
         return <Badge variant="pending">{status}</Badge>
     }
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-[75vh] flex items-center justify-center p-4">
+        <div className="bg-white p-8 sm:p-12 rounded-3xl border border-gray-100 shadow-lg text-center max-w-lg space-y-5 animate-fade-in">
+          <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto shadow-xs">
+            <ShieldAlert className="w-9 h-9" />
+          </div>
+          <div>
+            <span className="inline-block bg-purple-50 text-purple-700 text-xs font-bold px-3 py-1 rounded-full mb-2 border border-purple-200">
+              403 Access Denied
+            </span>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">เฉพาะผู้ดูแลระบบ (Admin) เท่านั้น</h2>
+            <p className="text-xs sm:text-sm text-gray-500 mt-2">
+              คุณกำลังเข้าใช้งานในสิทธิ์ <strong className="text-gray-800">{currentRole === 'student' ? 'นักศึกษา (Student)' : 'อาจารย์ / บุคลากร'}</strong> หน้านี้สงวนสิทธิ์เฉพาะผู้ดูแลระบบเท่านั้น
+            </p>
+          </div>
+
+          <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-xs text-gray-600 text-left space-y-2">
+            <p className="font-bold text-gray-800">💡 คำแนะนำสำหรับการพรีเซนต์ / ทดสอบ:</p>
+            <p className="text-gray-500">
+              กดที่รูปโปรไฟล์ของคุณมุมขวาบนในแถบ TopBar แล้วเลือกยศเป็น <strong className="text-purple-600">"ผู้ดูแลระบบ (Admin)"</strong> เพื่อทดลองเข้าใช้งานหน้านี้
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <button
+              onClick={() => setCurrentRole('admin')}
+              className="flex-1 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2"
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>สลับเป็นสิทธิ์แอดมิน</span>
+            </button>
+            <Link
+              href="/"
+              className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-xl transition-colors flex items-center justify-center"
+            >
+              กลับสู่หน้าแรก
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

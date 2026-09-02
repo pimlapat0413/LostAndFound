@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Shield, Home, FileText, PackageCheck, Search, Database, LogOut, User } from 'lucide-react';
 
+import { useRole } from '@/context/RoleContext';
+
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
@@ -12,13 +14,16 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const { currentRole, isAdmin } = useRole();
 
-  const navItems = [
+  const allNavItems = [
     { label: 'หน้าแรก', icon: Home, href: '/' },
     { label: 'แจ้งของหาย', icon: FileText, href: '/report' },
     { label: 'รายการของหาย / รับคืน', icon: PackageCheck, href: '/claim' },
-    { label: 'ผู้ดูแลระบบ (Admin)', icon: Shield, href: '/admin' },
+    { label: 'ผู้ดูแลระบบ (Admin)', icon: Shield, href: '/admin', adminOnly: true },
   ];
+
+  const navItems = allNavItems.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <>
