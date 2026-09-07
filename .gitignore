@@ -1,2 +1,6 @@
-.next
-node_modules
+node_modules/
+.next/
+out/
+build/
+.DS_Store
+*.local
